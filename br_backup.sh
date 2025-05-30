@@ -1,6 +1,11 @@
 #!/bin/bash
 
+#Fonction
 
+usage () {
+	echo br_backup [DIRBACKUP]
+	exit 1
+}
 if [[ -z $1 ]]; then
   usage    
 fi
