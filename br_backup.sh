@@ -21,7 +21,7 @@ if [[ ! -d "$DIRBACKUP" ]]; then
 fi
 
 #Verification de la presence du la variable
-if [[ ! "$ip_backup" ]]; then
+if [[ ! "$IP_BACKUP" ]]; then
 	echo "Erreur: Cette variable n'existe pas."
 	exit 1
 fi
@@ -45,7 +45,7 @@ tar -czf ~/$NOMARCHIVE.tar.gz $DIRBACKUP | openssl enc -aes-256-cbc -k $(cat ~/.
 DIRBACKUP_SRV="/home/$HOSTNAME/$(dirname "$DIRBACKUP")"
 ssh "$HOSTNAME@$IP_BACKUP" "mkdir -p '$DIRBACKUP_SRV'"
 
-scp "~/$NOMARCHIVE.tar.gz.enc" "$HOSTNAME@$IP_BACKUP:$DIRBACKUP_SRV/$NOMARCHIVE.tar.gz.enc"
+scp ~/$NOMARCHIVE.tar.gz.enc "$HOSTNAME@$IP_BACKUP:$DIRBACKUP_SRV/$NOMARCHIVE.tar.gz.enc"
 
 rm -f "$NOMARCHIVE.tar.gz.enc"
 rm -f "$NOMARCHIVE.tar.gz"
