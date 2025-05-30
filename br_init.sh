@@ -19,6 +19,7 @@ IPSERVER=$(ip -o -4 addr list enp0s3|awk '{print $4}'|cut -d"/" -f1)
 ssh "$USERNAME@$IPCLIENT" " 
   #Renseigner ip Server
   echo 'export IP_BACKUP="$IPSERVER"' >> ~/.bashrc
+  source .bashrc
    #Génère la clé si besoin
   if [[ ! -f ~/.ssh/id_ed25519 ]]; then
     ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
