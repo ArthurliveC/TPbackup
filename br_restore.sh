@@ -2,7 +2,7 @@
 
 BACKUP_SERVER="your-backup-server.com"  #Adressse du serveur de sauvegarde
 BACKUP_user="backup" 			#Utilisateur pour la connexion SSH
-BACKUP_PATH="/backups"			#Répertoire racine des sauvegardes sur le serveur
+#BACKUP_PATH="/home/$BACKUP_user"			#Répertoire racine des sauvegardes sur le serveur
 SSH_PORT="22"				#Chemin vers la clé SSH
 
 
@@ -25,7 +25,7 @@ fi
 
 if [[ ! command -V SSH >/dev/null ]]; then
 
-	apt install openssh-client -y
+	apt install ssh -y
 	echo "ssh est installé"
 fi
 	
@@ -52,7 +52,7 @@ fi
 # Création du chemin de sauvegarde
 
 HOSTNAME=$(hostname)
-REMOTE_BACKUP_DIR="$BACKUP_PATH/$HOSTNAME$TARGET_DIR"
+REMOTE_BACKUP_DIR="$TARGET_DIR"
 echo "Sauvegarde de: $TARGET_DIR"
 echo "Depuis: $BACKUP_USER@$BACKUP_SERVER:$REMOTE_BACKUP_DIR"
 
@@ -77,10 +77,10 @@ fi
 # Vérification de la sauvegarde locale sur le répertoire existant
 
 if [[ -d "$TARGET_DIR" ]]; then
-    BACKUP_LOCAL="$(TARGET_DIR).bak.$(date '+%Y-%m-%d')"     # "$(date '+%Y-%m-%d') --> horodatage avec date uniquement
+    BACKUP_LOCAL="$(dirname $TARGET_DIR).bak.$(date '+%Y-%m-%d')"     # "$(date '+%Y-%m-%d') --> horodatage avec date uniquement
     echo "Sauvegarde du répertoire qui existe vers $BACKUP_LOCAL"
 
-    if [[ ! sudo mv "$TARGET_DIR" "$BACKUP_LOCAL" ]]; then
+    if [[ ! mv "$TARGET_DIR" "$BACKUP_LOCAL" ]]; then
         echo "Impossible de sauvegarder sur le répertoire existant"
     fi 
 fi
@@ -90,7 +90,7 @@ fi
 PARENT_DIR=$(dirname "$TARGET_DIR")
 
 if [[ ! -d "$PARENT_DIR" ]]; then    
-    sudo mkdir -m 755 -p "$PARENT_DIR" 
+    mkdir -m 755 -p "$PARENT_DIR" 
     echo " $PARENT_DIR créé"
 fi
 
