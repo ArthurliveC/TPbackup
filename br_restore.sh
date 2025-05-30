@@ -77,7 +77,7 @@ fi
 # Vérification de la sauvegarde locale sur le répertoire existant
 
 if [[ -d "$TARGET_DIR" ]]; then
-    BACKUP_LOCAL="$(TARGET_DIR)".bak.$(date '+%Y-%m-%d')"     # $(date '+%Y-%m-%d') --> horodatage avec date uniquement
+    BACKUP_LOCAL="$(TARGET_DIR).bak.$(date '+%Y-%m-%d')"     # "$(date '+%Y-%m-%d') --> horodatage avec date uniquement
     echo "Sauvegarde du répertoire qui existe vers $BACKUP_LOCAL"
 
     if [[ ! sudo mv "$TARGET_DIR" "$BACKUP_LOCAL" ]]; then
