@@ -21,12 +21,12 @@ if [[ ! "$ip_backup" ]]; then
 	exit 1
 fi
 
-#Créer le dossier .keys s'il n'existe pas
-if [[ ! -d ~/.keys ]]; then
+#Créer le dossier .keys s il n existe pas
+if [[ ! -d ~/.keys ]]; then
 	mkdir -p  ~/.keys
 fi	
 
-#Générer les clés si elles n'existent pas
+#Générer les clés si elles n existent pas
 if [[ ! -f ~/.keys/key.hex ]] || [[ ! -f ~/.keys/iv.hex ]]; then
 	openssl rand -hex 32 > ~/.keys/key.hex
        	openssl rand -hex 16 > ~/.keys/iv.hex
@@ -38,7 +38,7 @@ tar -czf ~/$NOMARCHIVE.tar.gz $DIRBACKUP | openssl enc -aes-256-cbc -k $(cat ~/.
 
 
 DIRBACKUP_SRV="/home/$HOSTNAME/$(dirname "$DIRBACKUP")"
-ssh "$HOSTNAME@$IP_BACKUP" "mkdir -p 'DIRBACKUP_SRV'"
+ssh "$HOSTNAME@$IP_BACKUP" "mkdir -p '$DIRBACKUP_SRV'"
 
 scp "$NOMARCHIVE.tar.gz.enc" "$HOSTNAME@$IP_BACKUP:$DIRBACKUP_SRV/$NOMARCHIVE.tar.gz.enc"
 
