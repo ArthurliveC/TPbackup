@@ -53,4 +53,58 @@ fi
 
 HOSTNAME=$(hostname)
 REMOTE_BACKUP_DIR="$BACKUP_PATH/$HOSTNAME$TARGET_DIR"
+echo "Sauvegarde de: $TARGET_DIR"
+echo "Depuis: $BACKUP_USER@$BACKUP_SERVER:$REMOTE_BACKUP_DIR"
 
+
+# Vérification connexion SHH 
+
+echo "Test de connexion au serveur"
+
+if [[ ! ssh -p "$SSH_PORT" "$REMOTE_BACKUP_DIR" >/dev/null ]]; then
+    echo " Impossible de se connecter à BACKUP_SERVER"
+fi
+
+
+# Vérification si la sauvegarde existe
+
+echo "Vérification si la sauvegarde existe"
+
+if [[ ! ssh -p "$SSH_PORT" "$BACKUP_USER@$BACKUP_SERVER" "$REMOTE_BACKUP_DIR" >/dev/null ]]; then
+    echo " Sauvegarde introuvable:REMOTE_BACKUP_DIR"
+fi
+
+# Vérification de la sauvegarde locale sur le répertoire existant
+
+if [[ -d "$TARGET_DIR" ]]; then
+    BACKUP_LOCAL="$(TARGET_DIR).bak.$(date '+%Y-%m-%d')"     # "$(date '+%Y-%m-%d') --> horodatage avec date uniquement
+    echo "Sauvegarde du répertoire qui existe vers $BACKUP_LOCAL"
+
+    if [[ ! sudo mv "$TARGET_DIR" "$BACKUP_LOCAL" ]]; then
+        echo "Impossible de sauvegarder sur le répertoire existant"
+    fi 
+fi
+
+# Création du répertoire parent
+
+PARENT_DIR=$(dirname "$TARGET_DIR")
+
+if [[ ! -d "$PARENT_DIR" ]]; then    
+    sudo mkdir -m 755 -p "$PARENT_DIR" 
+    echo " $PARENT_DIR créé"
+fi
+
+# Sauvegarde
+
+echo "Début de la sauvegarde"
+
+#-a : archive (préserve structure, permissions, liens, etc.)
+#-v : mode verbeux (affiche les fichiers transférés)
+#-z : compression (réduit la bande passante)
+
+if [[ rsync -avz -e "ssh -p $SSH_PORT" -i "$SSH_KEY" "$BACHUP_LOCAL" "$REMOTE_BACKUP_DIR" ]]; then
+    echo "Succès de la sauvegarde"
+    echo " Répertoire sauvegardé $TARGET_DIR"
+else
+    echo "Echec de la sauvegarde"
+fi
