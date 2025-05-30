@@ -2,6 +2,14 @@
 
 #Prendre l'ip du client
 
+
+#Fonction
+
+usage () {
+	echo br_init [IPCLIENT] [USERNAME]
+	exit 1
+}
+
 if [[ -z $2 ]]; then
   usage    
 fi
