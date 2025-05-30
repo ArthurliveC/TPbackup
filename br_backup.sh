@@ -7,6 +7,8 @@ fi
 
 DIRBACKUP=$1
 NOMARCHIVE=$(basename $1)
+HOSTNAME=$(hostname)
+
 #Verification de la presence du repertoire
 if [[ ! -d "$DIRBACKUP" ]]; then
 	echo "Erreur: Ce repertoire n'existe pas."
