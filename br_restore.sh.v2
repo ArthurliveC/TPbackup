@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Fonction d'aide
+usage () {
+    echo "Usage: $0 nom_archive.tar.gz.enc"
+    exit 1
+}
+
+# Vérification de l'argument
+if [[ -z "$1" ]]; then
+    usage
+fi
+
+ARCHIVE_ENC="$1"
+ARCHIVE="$(basename "$ARCHIVE_ENC" .enc)"
+RESTORE_DIR="${ARCHIVE%.tar.gz}"
+HOSTNAME=$(hostname)
+
+# Vérification des clés de chiffrement
+if [[ ! -f ~/.keys/key.hex ]] || [[ ! -f ~/.keys/iv.hex ]]; then
+    echo "Erreur : Clés de chiffrement non trouvées dans ~/.keys"
+    exit 1
+fi
+
+# Vérifie la variable IP du serveur de backup
+if [[ -z "$IP_BACKUP" ]]; then
+    echo "Erreur : variable d'environnement IP_BACKUP non définie."
+    exit 1
+fi
+
+# Création répertoire temporaire
+TMP_DIR="/tmp/restore_$RANDOM"
+mkdir -p "$TMP_DIR"
+
+# Récupération du fichier depuis le serveur
+echo "Téléchargement de l'archive depuis $IP_BACKUP..."
+scp "$HOSTNAME@$IP_BACKUP:/home/$HOSTNAME/**/$ARCHIVE_ENC" "$TMP_DIR/" || {
+    echo "Erreur : Échec du téléchargement"
+    exit 1
+}
+
+# Déchiffrement
+echo "Déchiffrement de l'archive..."
+openssl enc -d -aes-256-cbc \
+    -K "$(cat ~/.keys/key.hex)" \
+    -iv "$(cat ~/.keys/iv.hex)" \
+    -in "$TMP_DIR/$ARCHIVE_ENC" \
+    -out "$TMP_DIR/$ARCHIVE" || {
+        echo "Erreur : Échec du déchiffrement"
+        exit 1
+    }
+
+# Extraction
+echo "Extraction de l'archive..."
+tar -xzf "$TMP_DIR/$ARCHIVE" -C "$TMP_DIR" || {
+    echo "Erreur : Échec de l'extraction"
+    exit 1
+}
+
+# Restauration
+echo "Restauration vers: ~/$RESTORE_DIR"
+mv "$TMP_DIR/$RESTORE_DIR" ~/
+
+# Nettoyage
+rm -rf "$TMP_DIR"
+
+echo "✅ Restauration terminée dans ~/$RESTORE_DIR"
