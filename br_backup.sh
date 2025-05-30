@@ -42,7 +42,7 @@ tar -czf ~/$NOMARCHIVE.tar.gz $DIRBACKUP | openssl enc -aes-256-cbc -k $(cat ~/.
 
 
 
-DIRBACKUP_SRV="/home/$HOSTNAME/$(dirname "$DIRBACKUP")"
+DIRBACKUP_SRV="/home/$HOSTNAME/$(basename "$DIRBACKUP")"
 ssh "$HOSTNAME@$IP_BACKUP" "mkdir -p '$DIRBACKUP_SRV'"
 
 scp ~/$NOMARCHIVE.tar.gz.enc "$HOSTNAME@$IP_BACKUP:$DIRBACKUP_SRV/$NOMARCHIVE.tar.gz.enc"
