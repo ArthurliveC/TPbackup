@@ -9,10 +9,27 @@ fi
 IPCLIENT=$1
 USERNAME=$2
 
-#Connection client ssh + recuperation du hostname
+TMPDIR=$(mktemp -d)
 
-HOSTNAME=$(ssh -T "$USERNAMR@$IPCLIENT" "bash -c 'hostname'")
-if [ -z "$HOSTNAME" ]; then
-  echo "Erreur : impossible de récupérer le hostname du client ($USERNAME)."
+#Connection client ssh + recuperation du hostname + generation cle ssh
+
+ssh "$USERNAME@$IPCLIENT" ' 
+  # Génère la clé si besoin
+  if [ ! -f ~/.ssh/id_ed25519 ]; then
+    ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+  fi
+  # Affiche le hostname et la clé publique
+  hostname
+  
+  cat ~/.ssh/id_ed25519.pub
+  
+' > "$TMPDIR/clientinfo.txt"
+
+HOSTNAME=$(head -n 1 "$TMPDIR/clientinfo.txt") #Prend la premiere ligne du fichier
+PUBKEY=$(tail -n +2 "$TMPDIR/clientinfo.txt") #Prend le reste du fichier a partir de la dexieme ligne
+
+if [ -z "$HOSTNAME" ] || [ -z "$PUBKEY" ]; then
+  echo "Erreur : récupération des infos client échouée."
   exit 1
 fi
+
