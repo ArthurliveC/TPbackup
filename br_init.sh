@@ -47,8 +47,8 @@ chown $HOSTNAME:$HOSTNAME /home/$HOSTNAME/.ssh
 chmod 700 /HOSTNAME/.ssh
 
 echo "$PUBKEY" >> /home/$HOSTNAME/.ssh/authorized_keys
-sudo chown $HOSTNAME:$HOSTNAME /home/$HOSTNAME/.ssh/authorized_keys
-sudo chmod 600 /home/$HOSTNAME/.ssh/authorized_keys
+chown $HOSTNAME:$HOSTNAME /home/$HOSTNAME/.ssh/authorized_keys
+chmod 600 /home/$HOSTNAME/.ssh/authorized_keys
 
 
 rm -fr "$TMPDIR"
