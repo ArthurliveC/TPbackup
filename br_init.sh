@@ -44,7 +44,7 @@ useradd -m "$HOSTNAME"  2>/dev/null
 
 mkdir -p /home/$HOSTNAME/.ssh
 chown $HOSTNAME:$HOSTNAME /home/$HOSTNAME/.ssh 
-chmod 700 home/$HOSTNAME/.ssh
+chmod 700 /home/$HOSTNAME/.ssh
 
 echo "$PUBKEY" >> /home/$HOSTNAME/.ssh/authorized_keys
 chown $HOSTNAME:$HOSTNAME /home/$HOSTNAME/.ssh/authorized_keys
