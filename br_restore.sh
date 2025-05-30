@@ -1,110 +1,84 @@
-#!usr/bin/bash
+  #!/bin/bash
 
-BACKUP_SERVER="your-backup-server.com"  #Adressse du serveur de sauvegarde
-BACKUP_user="backup" 			#Utilisateur pour la connexion SSH
-#BACKUP_PATH="/home/$BACKUP_user"			#Répertoire racine des sauvegardes sur le serveur
-SSH_PORT="22"				#Chemin vers la clé SSH
+# Configuration
+BACKUP_SERVER=$IP_BACKUP  # Adresse du serveur de sauvegarde
+BACKUP_USER=$(hostname)                    # Utilisateur pour la connexion SSH
+SSH_PORT="22"                           # Port SSH
+SSH_KEY="$HOME/.ssh/id_ed25519"            # Chemin vers la clé   # Dossier distant de sauvegarde
 
+# Fonction d'aide
+usage() {
+    echo "Usage: $0 /chemin/absolu/du/repertoire"
+    exit 1
+}
 
-
-if [[ $# -e ]]; then
-	usage
+# Vérification des arguments
+if [[ $# -ne 1 ]]; then
+    usage
 fi
 
 TARGET_DIR="$1"
 
-# Vérification que le répertoire a un chemin
-
-	# The operator =~ permet de comparer le coté droit au côté gauche
-
-if [[ ! "$TARGET_DIR" =~ ^/ ]] &&  echo "Le répertoire n'est pas un chemin absolu car il ne commence pas par /"
+# Vérifie si le chemin est absolu
+if [[ ! "$TARGET_DIR" =~ ^/ ]]; then
+    echo "Erreur : le répertoire doit être un chemin absolu (commencer par /)"
+    exit 1
 fi
 
+REMOTE_BACKUP_DIR=$TARGET_DIR
+# Vérification et installation des dépendances
+for cmd in ssh rsync; do
+    if ! command -v "$cmd" >/dev/null; then
+        echo "Installation de $cmd..."
+        sudo apt install -y "$cmd"
+    fi
+done
 
-# Vérification des dépendances (ssh, synchro client-bkp) 
+# Activation des services (utile surtout sur le serveur)
+sudo systemctl enable --now ssh
 
-if [[ ! command -V SSH >/dev/null ]]; then
-
-	apt install ssh -y
-	echo "ssh est installé"
-fi
-	
-systemctl enable --now ssh
-
-if [[ systemctl is-active ssh]]; then
-	echo "Le service SSH est actif"
-fi
-
-
-if [[ ! command -V rsync >/dev/null ]]; then
-
-	apt install rsync -y
-	echo "rsync est installé"
+if systemctl is-active --quiet ssh; then
+    echo "Le service SSH est actif"
 fi
 
-systemctl enable --now rsync
-
-if [[ systemctl is-active rsync]]; then
-	echo "Le service rsync est actif"
+# Vérifie la connexion SSH
+echo "Test de connexion SSH vers $BACKUP_USER@$BACKUP_SERVER..."
+if ! ssh -i "$SSH_KEY" -p "$SSH_PORT" "$BACKUP_USER@$BACKUP_SERVER" "exit" >/dev/null 2>&1; then
+    echo "Erreur : impossible de se connecter à $BACKUP_SERVER"
+    exit 1
 fi
 
-
-# Création du chemin de sauvegarde
-
-HOSTNAME=$(hostname)
-
-echo "Sauvegarde de: $TARGET_DIR"
-echo "Depuis: $BACKUP_USER@$BACKUP_SERVER:$REMOTE_BACKUP_DIR"
-
-
-# Vérification connexion SHH 
-
-echo "Test de connexion au serveur"
-
-if [[ ! ssh -p "$SSH_PORT" "$REMOTE_BACKUP_DIR" >/dev/null ]]; then
-    echo " Impossible de se connecter à BACKUP_SERVER"
+# Vérifie que le répertoire distant de backup existe
+if ! ssh -i "$SSH_KEY" -p "$SSH_PORT" "$BACKUP_USER@$BACKUP_SERVER" "test -f '$REMOTE_BACKUP_DIR'" >/dev/null 2>&1; then
+    echo "Erreur : le répertoire distant $REMOTE_BACKUP_DIR n'existe pas."
+    exit 1
 fi
 
-
-# Vérification si la sauvegarde existe
-
-echo "Vérification si la sauvegarde existe"
-
-if [[ ! ssh -p "$SSH_PORT" "$BACKUP_USER@$BACKUP_SERVER" "$REMOTE_BACKUP_DIR" >/dev/null ]]; then
-    echo " Sauvegarde introuvable:REMOTE_BACKUP_DIR"
+# Sauvegarde locale préalable si le dossier existe
+#if [[ -d $TARGET_DIR" ]]; then
+   # BACKUP_LOCAL=$(dirname $TARGET_DIR").bak.$(date '+%Y-%m-%d)
+   # echo "Déplacement de $TARGET_DIR vers $BACKUP_LOCAL pour sauvegarde locale
+  #  mv $TARGET_DIR "$BACKUP_LOCAL || {
+  #      echo Erreur : impossible de déplacer le répertoire existant"
+ #       exit 1
+#    }
 fi
 
-# Vérification de la sauvegarde locale sur le répertoire existant
-
-if [[ -d "$TARGET_DIR" ]]; then
-    BACKUP_LOCAL="$(dirname $TARGET_DIR).bak.$(date '+%Y-%m-%d')"     # "$(date '+%Y-%m-%d') --> horodatage avec date uniquement
-    echo "Sauvegarde du répertoire qui existe vers $BACKUP_LOCAL"
-
-    if [[ ! mv "$TARGET_DIR" "$BACKUP_LOCAL" ]]; then
-        echo "Impossible de sauvegarder sur le répertoire existant"
-    fi 
-fi
-
-# Création du répertoire parent
-
+# Création du répertoire parent local si nécessaire
 PARENT_DIR=$(dirname "$TARGET_DIR")
-
-if [[ ! -d "$PARENT_DIR" ]]; then    
-    mkdir -m 755 -p "$PARENT_DIR" 
-    echo " $PARENT_DIR créé"
+if [[ ! -d "$PARENT_DIR" ]]; then
+    mkdir -p -m 755 "$PARENT_DIR"
+    echo "Création du répertoire parent : $PARENT_DIR"
 fi
 
-# Sauvegarde
+# Lancement de la sauvegarde
+echo "Démarrage de la sauvegarde via rsync..."
 
-echo "Début de la sauvegarde"
-
-#-a : archive (préserve structure, permissions, liens, etc.)
-#-v : mode verbeux (affiche les fichiers transférés)
-#-z : compression (réduit la bande passante)
-
-if [[ rsync -avz -e "ssh -p $SSH_PORT" -i "$SSH_KEY" "$BACHUP_LOCAL" "$REMOTE_BACKUP_DIR" ]]; then
-    echo "Succès de la sauvegarde"
-    echo " Répertoire sauvegardé $TARGET_DIR"
+if rsync -avz -e "ssh -p $SSH_PORT -i $SSH_KEY" "$BACKUP_LOCAL/" "$BACKUP_USER@$BACKUP_SERVER:$REMOTE_BACKUP_DIR/"; then
+    echo "Sauvegarde réussie : $TARGET_DIR -> $REMOTE_BACKUP_DIR"
 else
-    echo "Echec de la sauvegarde"
+    echo "Échec de la sauvegarde"
+    exit 1
 fi
+
+  
