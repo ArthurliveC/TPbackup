@@ -43,5 +43,6 @@ ssh "$HOSTNAME@$IP_BACKUP" "mkdir -p 'DIRBACKUP_SRV'"
 scp "$NOMARCHIVE.tar.gz.enc" "$HOSTNAME@$IP_BACKUP:$DIRBACKUP_SRV/$NOMARCHIVE.tar.gz.enc"
 
 rm -f "$NOMARCHIVE.tar.gz.enc"
+rm -f "$NOMARCHIVE.tar.gz"
 
 echo "Backup de $DIRBACKUP terminé et envoyé sur le serveur backup $IP_BACKUP !"
