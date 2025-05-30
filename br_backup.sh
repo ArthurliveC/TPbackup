@@ -23,3 +23,13 @@ fi
 
 tar -czf ~/$NOMARCHIVE.tar.gz $DIRBACKUP 
 
+
+
+DIRBACKUP_SRV="/home/$HOSTNAME/$(dirname "$DIRBACKUP")"
+ssh "$HOSTNAME@$IP_BACKUP" "mkdir -p 'DIRBACKUP_SRV'"
+
+scp "$NOMARCHIVE.tar.gz.enc" "$HOSTNAME@$IP_BACKUP:$DIRBACKUP_SRV/$NOMARCHIVE.tar.gz.enc"
+
+rm -f "$NOMARCHIVE.tar.gz.enc"
+
+echo "Backup de $DIRBACKUP terminé et envoyé sur le serveur backup $IP_BACKUP !"
